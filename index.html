@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>پازل تصویری Drag & Drop</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .puzzle-container {
+      width: 600px;
+      height: 480px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 2px;
+      border: 3px solid #fff;
+    }
+
+    .tile {
+      background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80');
+      background-size: 1000px 800px;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .tile.dragging {
+      opacity: 0.5;
+    }
+
+    .tile.over {
+      outline: 2px dashed yellow;
+    }
+  </style>
+</head>
+<body>
+  <div class="puzzle-container" id="puzzle"></div>
+
+  <script>
+    const puzzle = document.getElementById('puzzle');
+    const size = 3;
+    const tiles = [];
+
+    // ساخت قطعه‌ها با موقعیت اولیه درست
+    for (let row = 0; row < size; row++) {
+      for (let col = 0; col < size; col++) {
+        const tile = document.createElement('div');
+        tile.classList.add('tile');
+        tile.setAttribute('draggable', 'true');
+        tile.dataset.correct = row * size + col;
+        tile.style.backgroundPosition = -${col * 333}px -${row * 266}px;
+        tiles.push(tile);
+      }
+    }
+
+    // درهم‌ریختن قطعه‌ها
+    tiles.sort(() => Math.random() - 0.5);
+    tiles.forEach(t => puzzle.appendChild(t));
+
+    // منطق Drag & Drop
+    let draggedTile = null;
+
+    puzzle.addEventListener('dragstart', e => {
+      if (!e.target.classList.contains('tile')) return;
+      draggedTile = e.target;
+      draggedTile.classList.add('dragging');
+    });
+
+    puzzle.addEventListener('dragend', e => {
+      if (draggedTile) draggedTile.classList.remove('dragging');
+    });
+
+    puzzle.addEventListener('dragover', e => {
+      e.preventDefault();
+      const target = e.target;
+      if (target.classList.contains('tile') && target !== draggedTile) {
+        target.classList.add('over');
+      }
+    });
+
+    puzzle.addEventListener('dragleave', e => {
+      if (e.target.classList.contains('tile')) {
+        e.target.classList.remove('over');
+      }
+    });
+
+    puzzle.addEventListener('drop', e => {
+      e.preventDefault();
+      const target = e.target;
+      if (target.classList.contains('tile') && target !== draggedTile) {
+        target.classList.remove('over');
+
+        const clone1 = draggedTile.cloneNode(true);
+        const clone2 = target.cloneNode(true);
+
+        puzzle.replaceChild(clone1, target);
+        puzzle.replaceChild(clone2, draggedTile);
+
+        addDragEvents(); // دوباره برای قطعه‌های جدید drag رو فعال کن
+        checkIfSolved();
+      }
+    });
+
+    // افزودن دوباره رویدادها به قطعه‌های جدید
+    function addDragEvents() {
+      document.querySelectorAll('.tile').forEach(tile => {
+        tile.addEventListener('dragstart', e => {
+          draggedTile = e.target;
+          draggedTile.classList.add('dragging');
+        });
+        tile.addEventListener('dragend', e => {
+          if (draggedTile) draggedTile.classList.remove('dragging');
+        });
+      });
+    }
+
+    // بررسی حل‌شدن پازل
+    function checkIfSolved() {
+      const current = Array.from(puzzle.children);
+      const isSolved = current.every((tile, index) => +tile.dataset.correct === index);
+      if (isSolved) {
+        setTimeout(() => alert("تبریک! پازل کامل شد 🎉"), 100);
+      }
+    }
+
+    addDragEvents(); // بار اول اجرا
+  </script>
+</body>
+</html>
